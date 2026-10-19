@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASOP | Autonomous Security Operations Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#090d16] text-slate-200 min-h-screen antialiased">
+  <div class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-6">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="px-2.5 py-1 text-xs font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded">
+            ASOP v1.0 · Live SOC
+          </span>
+          <span class="text-xs text-slate-400">
+            Python · FastAPI · PostgreSQL · Next.js · Google Gemini AI · Docker
+          </span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-bold text-white mt-2">
+          Autonomous Security Operations Platform (ASOP)
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          AI Threat Anomaly Classification (SQLi, XSS, Brute Force), Automated Risk Scoring &amp; Real-Time Control Validation
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button id="btn-simulate" onclick="simulateWave()" class="px-4 py-2.5 rounded-lg font-medium text-sm bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/20 transition">
+          ⚡ Simulate Live Attack Wave
+        </button>
+        <button id="btn-report" onclick="generateReport()" class="px-4 py-2.5 rounded-lg font-medium text-sm bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/20 transition">
+          📄 Generate Gemini Compliance Report
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Cards -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs uppercase text-slate-400">Automated Risk Score</p>
+        <p class="text-3xl font-bold text-rose-400 mt-1"><span id="kpi-risk">--</span><span class="text-sm text-slate-500 font-normal"> / 100</span></p>
+        <p class="text-xs text-slate-400 mt-1">Weighted AI Threat Index</p>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs uppercase text-slate-400">Control Assurance</p>
+        <p class="text-3xl font-bold text-emerald-400 mt-1"><span id="kpi-compliance">--</span>%</p>
+        <p class="text-xs text-slate-400 mt-1">ISO 27001 / NIST / OWASP</p>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs uppercase text-slate-400">SQLi / XSS / Brute Force</p>
+        <p class="text-2xl font-bold text-amber-400 mt-1" id="kpi-threats">0 / 0 / 0</p>
+        <p class="text-xs text-slate-400 mt-1">Classified Threat Anomalies</p>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs uppercase text-slate-400">Audit Evidence Hashes</p>
+        <p class="text-3xl font-bold text-cyan-400 mt-1" id="kpi-evidence">0</p>
+        <p class="text-xs text-slate-400 mt-1">SHA-256 Chain of Custody</p>
+      </div>
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs uppercase text-slate-400">Live Logs Ingested</p>
+        <p class="text-3xl font-bold text-white mt-1" id="kpi-logs">0</p>
+        <p class="text-xs text-slate-400 mt-1">Real-Time Telemetry Stream</p>
+      </div>
+    </section>
+
+    <!-- Custom Log Ingest Form -->
+    <form onsubmit="ingestCustom(event)" class="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row gap-3 items-end">
+      <div class="w-full md:w-44">
+        <label class="text-xs text-slate-400 block mb-1">Source IP</label>
+        <input id="inp-ip" value="203.0.113.77" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white" />
+      </div>
+      <div class="w-full md:w-60">
+        <label class="text-xs text-slate-400 block mb-1">Target Endpoint</label>
+        <input id="inp-endpoint" value="/api/v1/auth/login" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-white" />
+      </div>
+      <div class="flex-1 w-full">
+        <label class="text-xs text-slate-400 block mb-1">Live Log Payload (Test SQLi, XSS, or Brute Force)</label>
+        <input id="inp-payload" value="username=admin' OR 1=1--" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm font-mono text-amber-300" />
+      </div>
+      <button type="submit" class="px-4 py-2 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 text-sm font-medium whitespace-nowrap">
+        Ingest &amp; Score Log →
+      </button>
+    </form>
+
+    <!-- Tabs -->
+    <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
+      <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 rounded-t-lg text-sm font-medium bg-slate-800 text-cyan-400 border-b-2 border-cyan-400">1. AI Threat Classification &amp; Risk Feed</button>
+      <button onclick="switchTab('controls')" id="tab-controls" class="px-4 py-2 rounded-t-lg text-sm font-medium text-slate-400 hover:text-white">2. Real-Time Control Validation</button>
+      <button onclick="switchTab('evidence')" id="tab-evidence" class="px-4 py-2 rounded-t-lg text-sm font-medium text-slate-400 hover:text-white">3. Automated Audit Evidence (SHA-256)</button>
+      <button onclick="switchTab('reports')" id="tab-reports" class="px-4 py-2 rounded-t-lg text-sm font-medium text-slate-400 hover:text-white">4. Gemini Compliance &amp; Incident Reports</button>
+    </div>
+
+    <div id="panel-logs" class="space-y-3"></div>
+    <div id="panel-controls" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    <div id="panel-evidence" class="hidden bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto"></div>
+    <div id="panel-reports" class="hidden space-y-6"></div>
+  </div>
+
+  <script>
+    let currentTab = 'logs';
+    function escapeHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function switchTab(tab) {
+      currentTab = tab;
+      ['logs','controls','evidence','reports'].forEach(t => {
+        document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById('tab-' + t);
+        btn.className = t === tab
+          ? 'px-4 py-2 rounded-t-lg text-sm font-medium bg-slate-800 text-cyan-400 border-b-2 border-cyan-400'
+          : 'px-4 py-2 rounded-t-lg text-sm font-medium text-slate-400 hover:text-white';
+      });
+    }
+    async function loadDashboard() {
+      const res = await fetch('/api/dashboard');
+      const d = await res.json();
+      const m = d.metrics;
+      document.getElementById('kpi-risk').textContent = m.overall_risk_score;
+      document.getElementById('kpi-compliance').textContent = m.compliance_score;
+      document.getElementById('kpi-threats').textContent = `${m.threat_counts['SQLi']||0} / ${m.threat_counts['XSS']||0} / ${m.threat_counts['Brute Force']||0}`;
+      document.getElementById('kpi-evidence').textContent = m.evidence_collected;
+      document.getElementById('kpi-logs').textContent = m.total_logs;
+
+      document.getElementById('panel-logs').innerHTML = d.logs.map(l => `
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row justify-between gap-4">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2.5 py-0.5 text-xs font-bold rounded ${l.threat_type === 'Normal' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}">${escapeHtml(l.threat_type)}</span>
+              <span class="text-xs font-mono text-slate-400">${escapeHtml(l.source_ip)}</span>
+              <span class="text-xs font-semibold text-cyan-300">${escapeHtml(l.method)} ${escapeHtml(l.endpoint)}</span>
+              <span class="text-xs text-slate-500">${escapeHtml(l.mitre_tactic)}</span>
+            </div>
+            <p class="text-xs font-mono bg-slate-950 p-2 rounded border border-slate-800 text-amber-300 break-all">${escapeHtml(l.payload)}</p>
+            <p class="text-xs text-slate-300"><strong class="text-cyan-400">AI Classification Analysis:</strong> ${escapeHtml(l.ai_reasoning)}</p>
+          </div>
+          <div class="flex md:flex-col justify-between items-end min-w-[170px] text-right">
+            <div>
+              <span class="text-xs text-slate-400 block">Risk Score</span>
+              <span class="text-2xl font-bold ${l.risk_score >= 70 ? 'text-rose-400' : 'text-emerald-400'}">${l.risk_score} / 100</span>
+            </div>
+            <span class="px-2 py-1 text-[11px] font-mono bg-slate-800 text-cyan-300 rounded">${escapeHtml(l.automated_action)}</span>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('panel-controls').innerHTML = d.controls.map(c => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-mono text-cyan-400">${escapeHtml(c.control_id)} · ${escapeHtml(c.framework)}</span>
+            <span class="px-2.5 py-0.5 text-xs font-bold rounded ${c.status === 'PASS' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}">${escapeHtml(c.status)} (${c.pass_rate}%)</span>
+          </div>
+          <h3 class="text-base font-semibold text-white">${escapeHtml(c.name)}</h3>
+          <p class="text-xs text-slate-400">${escapeHtml(c.description)}</p>
+          <p class="text-xs text-slate-500 pt-1">Linked Audit Evidence Items: <strong class="text-slate-300">${c.evidence_count}</strong></p>
+        </div>
+      `).join('');
+
+      document.getElementById('panel-evidence').innerHTML = `
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950 text-slate-400 uppercase">
+            <tr><th class="p-3">Control ID</th><th class="p-3">Threat Class</th><th class="p-3">Source IP</th><th class="p-3">Automated Response</th><th class="p-3">SHA-256 Evidence Hash</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            ${d.evidence.map(e => `
+              <tr>
+                <td class="p-3 font-mono text-cyan-400">${escapeHtml(e.control_id)}</td>
+                <td class="p-3 font-semibold text-rose-400">${escapeHtml(e.threat_type)}</td>
+                <td class="p-3 font-mono">${escapeHtml(e.source_ip)}</td>
+                <td class="p-3 font-mono text-emerald-400">${escapeHtml(e.response_taken)}</td>
+                <td class="p-3 font-mono text-slate-400">${escapeHtml(e.evidence_hash)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      document.getElementById('panel-reports').innerHTML = d.reports.map(r => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+            <div>
+              <h3 class="text-lg font-bold text-white">${escapeHtml(r.title)}</h3>
+              <p class="text-xs text-cyan-400">Engine: ${escapeHtml(r.generated_by)}</p>
+            </div>
+            <span class="text-xs text-slate-400">Risk: ${r.overall_risk_score}/100 · Compliance: ${r.compliance_score}%</span>
+          </div>
+          <pre class="whitespace-pre-wrap text-xs font-mono text-slate-200 bg-slate-950 p-4 rounded-lg border border-slate-800 leading-relaxed">${escapeHtml(r.markdown_content)}</pre>
+        </div>
+      `).join('');
+    }
+    async function simulateWave() {
+      const btn = document.getElementById('btn-simulate');
+      btn.textContent = 'Injecting Attack Wave...';
+      await fetch('/api/logs/simulate', { method: 'POST' });
+      await loadDashboard();
+      btn.textContent = '⚡ Simulate Live Attack Wave';
+    }
+    async function ingestCustom(e) {
+      e.preventDefault();
+      await fetch('/api/logs/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source_ip: document.getElementById('inp-ip').value,
+          service: 'edge-gateway',
+          endpoint: document.getElementById('inp-endpoint').value,
+          method: 'POST',
+          payload: document.getElementById('inp-payload').value,
+        }),
+      });
+      await loadDashboard();
+    }
+    async function generateReport() {
+      const btn = document.getElementById('btn-report');
+      btn.textContent = 'Generating with Gemini...';
+      await fetch('/api/reports/generate', { method: 'POST' });
+      await loadDashboard();
+      switchTab('reports');
+      btn.textContent = '📄 Generate Gemini Compliance Report';
+    }
+    loadDashboard();
+  </script>
+</body>
+</html>
